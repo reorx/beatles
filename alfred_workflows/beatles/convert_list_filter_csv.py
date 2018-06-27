@@ -5,7 +5,7 @@ import csv
 
 
 class K:
-    song = 'Song'
+    name = 'Song'
     album = 'Album debut'
     songwriter = 'Songwriter(s)'
     vocal = 'Lead vocal(s)'
@@ -17,25 +17,40 @@ class K:
 SUB_REGEX = re.compile(r'^([\w\s\(\),]+)((\[\d+\])+)')
 
 
-def to_alfred_dict(d):
-    """
-    - title
-    - subtitle
-    - arg
-    """
-    song = trim_quotes(d[K.song])
+song_keys = ['name', 'album', 'songwriter', 'vocal', 'year', 'notes']
+
+
+def to_song_dict(d):
+    sd = {}
+    for k in song_keys:
+        sd[k] = d[getattr(K, k)]
+
+    sd['name'] = trim_quotes(sd['name'])
+
     vocals = []
-    for i in d[K.vocal].split('\n'):
+    for i in sd['vocal'].split('\n'):
         vocals.append(
             trim_braces(
                 SUB_REGEX.sub(r'\1', i.strip()).strip()
             )
         )
-    vocals_str = ', '.join(vocals)
-    album_one_line = d[K.album].strip().replace('\n', ' ')
-    subtitle = '{} / {} / {}'.format(vocals_str, album_one_line, d[K.year])
+    sd['vocal'] = ', '.join(vocals)
+
+    sd['album'] = sd['album'].strip().replace('\n', ' ')
+
+    return sd
+
+
+def to_alfred_dict(sd):
+    """
+    - title
+    - subtitle
+    - arg
+    """
+    subtitle = '{} / {} / {}'.format(sd['vocal'], sd['album'], sd['year'])
+
     return {
-        'title': song,
+        'title': sd['name'],
         'subtitle': subtitle,
         'arg': subtitle,
     }
@@ -54,11 +69,13 @@ def trim_braces(s):
 
 
 def main():
+    songs = []
     rows = []
     with open('./beatles_songs.csv', 'r') as fi:
         r = csv.DictReader(fi)
         for i in r:
-            rows.append(to_alfred_dict(i))
+            sd = to_song_dict(i)
+            rows.append(to_alfred_dict(sd))
 
     with open('./list_filter.csv', 'w') as fo:
         w = csv.DictWriter(fo, fieldnames=['title', 'subtitle', 'arg'])
