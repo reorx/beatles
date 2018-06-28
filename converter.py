@@ -116,9 +116,8 @@ from difflib import SequenceMatcher
 
 __version__ = '{}'
 
-re_brackets = re.compile(r'\([^()]+\)')
-
 DEBUG = False
+PURGE_QUERY = False
 MATCH_MODE = 'rank'
 MATCH_LIMIT = 1
 MATCH_RATIO = 0.75
@@ -126,17 +125,18 @@ FMT = '{{title}} - {{vocals}}, {{year}}'
 LIST_ALL = False
 SHOW_ENVS = False
 
-global_keys = ['DEBUG', 'MATCH_MODE', 'MATCH_LIMIT', 'MATCH_RATIO', 'FMT', 'LIST_ALL', 'SHOW_ENVS']
+global_keys = ['DEBUG', 'PURGE_QUERY', 'MATCH_MODE', 'MATCH_LIMIT', 'MATCH_RATIO', 'FMT', 'LIST_ALL', 'SHOW_ENVS']
+
+re_brackets = re.compile(r'\([^()]+\)')
 
 def debugp(s):
     if DEBUG:
         print('DEBUG: ' + s)
 
 def match_songs(query, mode):
-    # remove `(xxx)`
-    query = re_brackets.sub('', query)
     # keep only alpha
     sig = ''.join(i for i in query if i.isalpha()).lower()
+    debugp('query={{}} sig={{}}'.format(repr(query), sig))
 
     if mode == 'rank':
         return rank_match(sig, MATCH_RATIO, MATCH_LIMIT)
@@ -197,6 +197,13 @@ def limit_list(l, limit):
 def format_output_line(s):
     return FMT.format(**s)
 
+def purge_query(s):
+    # remove brackets like `(xxx)`
+    s = re_brackets.sub('', s)
+    # strip
+    s = s.strip()
+    return s
+
 def main():
     # update global vars by env
     for i in global_keys:
@@ -225,6 +232,8 @@ def main():
     except IndexError:
         print('Usage: beatles_searcher.py <query>')
         sys.exit(1)
+    if PURGE_QUERY:
+        query = purge_query(query)
 
     debugp('global vars: MATCH_MODE={{}} MATCH_RATIO={{}} MATCH_LIMIT={{}} FMT={{}}'.format(
         MATCH_MODE, MATCH_RATIO, MATCH_LIMIT, FMT,
