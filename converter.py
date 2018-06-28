@@ -140,6 +140,8 @@ def match_songs(query, mode):
 
     if mode == 'rank':
         return rank_match(sig, MATCH_RATIO, MATCH_LIMIT)
+    if mode == 'fuzzy':
+        return fuzzy_match(sig, MATCH_LIMIT)
     else:
         raise ValueError('mode is not supported: ' + mode)
 
@@ -164,13 +166,33 @@ def rank_match(sig, min_ratio, limit):
             debugp('rank match candidate: {{}} {{}}'.format(ratio, s))
             candidates.append(s)
     if not candidates:
-        debugp('ran match no candidates, closest match: {{}}'.format(compares[0]))
+        debugp('rank match no candidates, closest match: {{}}'.format(compares[0]))
         return candidates
 
     debugp('rank match: total={{}} limit={{}}'.format(len(candidates), limit))
-    if len(candidates) > limit:
-        return candidates[:limit]
-    return candidates
+    return limit_list(candidates, limit)
+
+def fuzzy_match(sig, limit):
+    c_starts = []
+    c_in = []
+    for k, s in songs.items():
+        if k.startswith(sig):
+            c_starts.append(s)
+            continue
+        if sig in k:
+            c_in.append(s)
+            continue
+    candidates = c_starts + c_in
+    if not candidates:
+        debugp('fuzzy match no candidates')
+        return candidates
+    debugp('fuzzy match: total={{}} limit={{}}'.format(len(candidates), limit))
+    return limit_list(candidates, limit)
+
+def limit_list(l, limit):
+    if len(l) > limit:
+        return l[:limit]
+    return l
 
 def format_output_line(s):
     return FMT.format(**s)
