@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# vim: tabstop=4 shiftwidth=4 expandtab filetype=python
 
 import os
 import re
@@ -118,7 +119,7 @@ def main():
     if SHOW_ENVS:
         print('Env vars and default value')
         for i in global_keys:
-            print('  BS_{}	{}'.format(i, globals()[i]))
+            print('  BS_{:20}{}'.format(i, globals()[i]))
         return
 
     # list all
