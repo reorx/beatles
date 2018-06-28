@@ -99,7 +99,7 @@ def main():
         for sd in sd_list:
             # keep only letter
             signature = ''.join(i for i in sd['title'] if i.isalpha()).lower()
-            songs_def += '"{}": {},\n'.format(signature, json.dumps(sd, ensure_ascii=False))
+            songs_def += '"{}": {},\n'.format(signature, json.dumps(sd, ensure_ascii=False, sort_keys=True))
         songs_def += '}'
         code = code_tmpl.format(py_cli_version, songs_def)
         fpy.write(code)
