@@ -118,7 +118,7 @@ __version__ = '{}'
 
 DEBUG = False
 PURGE_QUERY = False
-MATCH_MODE = 'rank'
+MATCH_MODE = 'rank'  # rank, fuzzy, or mixed
 MATCH_LIMIT = 1
 MATCH_RATIO = 0.75
 FMT = '{{title}} - {{vocals}}, {{year}}'
@@ -138,9 +138,15 @@ def match_songs(query, mode):
     sig = ''.join(i for i in query if i.isalpha()).lower()
     debugp('query={{}} sig={{}}'.format(repr(query), sig))
 
+    results = []
+    for m in mode.split(','):
+        results.extend(call_match_by_mode(m, sig))
+    return limit_list(results, MATCH_LIMIT)
+
+def call_match_by_mode(mode, sig):
     if mode == 'rank':
         return rank_match(sig, MATCH_RATIO, MATCH_LIMIT)
-    if mode == 'fuzzy':
+    elif mode == 'fuzzy':
         return fuzzy_match(sig, MATCH_LIMIT)
     else:
         raise ValueError('mode is not supported: ' + mode)
@@ -245,14 +251,15 @@ def main():
         print(str(e))
         sys.exit(1)
 
+    if not matched:
+        sys.exit(1)
     for s in matched:
         print(format_output_line(s))
-    else:
-        sys.exit(1)
 
 songs = {}
 
-main()
+if __name__ == '__main__':
+    main()
 """
 
 if __name__ == '__main__':

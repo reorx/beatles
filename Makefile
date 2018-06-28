@@ -1,0 +1,2 @@
+convert:
+	python converter.py
