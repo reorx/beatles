@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 
+import os
 import re
 import csv
 import json
 
 
 class K:
-    name = 'Song'
+    title = 'Song'
     album = 'Album debut'
-    songwriter = 'Songwriter(s)'
-    vocal = 'Lead vocal(s)'
+    songwriters = 'Songwriter(s)'
+    vocals = 'Lead vocal(s)'
     year = 'Year'
     notes = 'Notes'
     ref = 'Ref(s)'
@@ -18,7 +19,7 @@ class K:
 SUB_REGEX = re.compile(r'^([\w\s\(\),]+)((\[\d+\])+)')
 
 
-song_keys = ['name', 'album', 'songwriter', 'vocal', 'year', 'notes']
+song_keys = ['title', 'album', 'songwriters', 'vocals', 'year', 'notes']
 
 
 def to_song_dict(d):
@@ -26,16 +27,16 @@ def to_song_dict(d):
     for k in song_keys:
         sd[k] = d[getattr(K, k)]
 
-    sd['name'] = trim_quotes(sd['name'])
+    sd['title'] = trim_quotes(sd['title'])
 
     vocals = []
-    for i in sd['vocal'].split('\n'):
+    for i in sd['vocals'].split('\n'):
         vocals.append(
             trim_braces(
                 SUB_REGEX.sub(r'\1', i.strip()).strip()
             )
         )
-    sd['vocal'] = ', '.join(vocals)
+    sd['vocals'] = ', '.join(vocals)
 
     sd['album'] = sd['album'].strip().replace('\n', ' ')
 
@@ -48,10 +49,10 @@ def to_alfred_dict(sd):
     - subtitle
     - arg
     """
-    subtitle = '{} / {} / {}'.format(sd['vocal'], sd['album'], sd['year'])
+    subtitle = '{} / {} / {}'.format(sd['vocals'], sd['album'], sd['year'])
 
     return {
-        'title': sd['name'],
+        'title': sd['title'],
         'subtitle': subtitle,
         'arg': subtitle,
     }
@@ -68,31 +69,39 @@ def trim_braces(s):
         return s[1:-1]
     return s
 
+DATA_CSV_PATH = './data/songs.wikipedia.csv'
+ALFRED_CSV_PATH = './plugins/alfred/list_filter.csv'
+PY_CLI_PATH = './beatles_song/beatles_song.py'
 
 def main():
+    py_cli_version = os.environ.get('PY_CLI_VERSION', '0.1.0')
     sd_list = []
     rows = []
-    with open('./beatles_songs.csv', 'r') as fi:
+    print('Reading {}'.format(DATA_CSV_PATH))
+    with open(DATA_CSV_PATH, 'r') as fi:
         r = csv.DictReader(fi)
         for i in r:
             sd = to_song_dict(i)
             sd_list.append(sd)
             rows.append(to_alfred_dict(sd))
+    sd_list = sorted(sd_list, key=lambda x: x['title'])
 
-    with open('./list_filter.csv', 'w') as fo:
+    print('Writing {}'.format(ALFRED_CSV_PATH))
+    with open(ALFRED_CSV_PATH, 'w') as fo:
         w = csv.DictWriter(fo, fieldnames=['title', 'subtitle', 'arg'])
         w.writeheader()
         for row in rows:
             w.writerow(row)
 
-    with open('./beatles_searcher.py', 'w') as fpy:
+    print('Writing {}'.format(PY_CLI_PATH))
+    with open(PY_CLI_PATH, 'w') as fpy:
         songs_def = '{\n'
         for sd in sd_list:
             # keep only letter
-            signature = ''.join(i for i in sd['name'] if i.isalpha()).lower()
+            signature = ''.join(i for i in sd['title'] if i.isalpha()).lower()
             songs_def += '"{}": {},\n'.format(signature, json.dumps(sd, ensure_ascii=False))
         songs_def += '}'
-        code = code_tmpl.format(songs_def)
+        code = code_tmpl.format(py_cli_version, songs_def)
         fpy.write(code)
 
 
@@ -105,50 +114,112 @@ import re
 import sys
 from difflib import SequenceMatcher
 
-songs = {}
+__version__ = '{}'
 
 re_brackets = re.compile(r'\([^()]+\)')
 
-DEBUG = os.environ.get('BS_DEBUG', False)
-MATCH_MODE = os.environ.get('BS_MATCH_MODE', 'precise')
+DEBUG = False
+MATCH_MODE = 'rank'
+MATCH_LIMIT = 1
+MATCH_RATIO = 0.75
+FMT = '{{title}} - {{vocals}}, {{year}}'
+LIST_ALL = False
+SHOW_ENVS = False
+
+global_keys = ['DEBUG', 'MATCH_MODE', 'MATCH_LIMIT', 'MATCH_RATIO', 'FMT', 'LIST_ALL', 'SHOW_ENVS']
 
 def debugp(s):
     if DEBUG:
         print('DEBUG: ' + s)
 
-min_ratio = 0.75
-
-def match_song(query):
+def match_songs(query, mode):
     # remove `(xxx)`
     query = re_brackets.sub('', query)
     # keep only alpha
     sig = ''.join(i for i in query if i.isalpha()).lower()
-    s = songs.get(sig)
+
+    if mode == 'rank':
+        return rank_match(sig, MATCH_RATIO, MATCH_LIMIT)
+    else:
+        raise ValueError('mode is not supported: ' + mode)
+
+def precise_match(sig):
+    return songs.get(sig)
+
+def rank_match(sig, min_ratio, limit):
+    s = precise_match(sig)
     if s:
-        return s
-    debugp('no direct signature match')
+        return [s]
+    debugp('precise match no result')
+
     compares = []
-    for k, v in songs.items():
+    for k, s in songs.items():
         ratio = SequenceMatcher(None, k, sig).ratio()
-        compares.append((ratio, v))
-    top = sorted(compares, key=lambda x: x[0], reverse=True)[0]
-    debugp('closest match: {{}}'.format(top))
-    if top[0] > min_ratio:
-        return top[1]
-    debugp('top ratio is under {{}}, nothing really matched'.format(min_ratio))
+        compares.append((ratio, s))
+    compares = sorted(compares, key=lambda x: x[0], reverse=True)
+
+    candidates = []
+    for ratio, s in compares:
+        if ratio > min_ratio:
+            debugp('rank match candidate: {{}} {{}}'.format(ratio, s))
+            candidates.append(s)
+    if not candidates:
+        debugp('ran match no candidates, closest match: {{}}'.format(compares[0]))
+        return candidates
+
+    debugp('rank match: total={{}} limit={{}}'.format(len(candidates), limit))
+    if len(candidates) > limit:
+        return candidates[:limit]
+    return candidates
+
+def format_output_line(s):
+    return FMT.format(**s)
 
 def main():
-    fmt = os.environ.get('BS_FMT', '{{vocal}} - {{year}}')
+    # update global vars by env
+    for i in global_keys:
+        env_key = 'BS_' + i
+        globals()[i] = os.environ.get(env_key, globals()[i])
+    global MATCH_LIMIT
+    global MATCH_RATIO
+    MATCH_LIMIT = int(MATCH_LIMIT)
+    MATCH_RATIO = float(MATCH_RATIO)
+
+    # show envs
+    if SHOW_ENVS:
+        print('Env vars and default value')
+        for i in global_keys:
+            print('  BS_{{}}\t{{}}'.format(i, globals()[i]))
+        return
+
+    # list all
+    if LIST_ALL:
+        for s in songs.values():
+            print(format_output_line(s))
+        return
+
     try:
         query = sys.argv[1]
     except IndexError:
         print('Usage: beatles_searcher.py <query>')
         sys.exit(1)
-    s = match_song(query)
-    if s:
-        print(fmt.format(**s) + '|' + s['name'])
+
+    debugp('global vars: MATCH_MODE={{}} MATCH_RATIO={{}} MATCH_LIMIT={{}} FMT={{}}'.format(
+        MATCH_MODE, MATCH_RATIO, MATCH_LIMIT, FMT,
+    ))
+    # match songs
+    try:
+        matched = match_songs(query, MATCH_MODE)
+    except ValueError as e:
+        print(str(e))
+        sys.exit(1)
+
+    for s in matched:
+        print(format_output_line(s))
     else:
         sys.exit(1)
+
+songs = {}
 
 main()
 """
