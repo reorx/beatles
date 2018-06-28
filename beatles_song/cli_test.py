@@ -15,17 +15,29 @@ def do_cli(query, env=None, with_coverage=True):
     :rtype: binary string
     """
     args = [sys.executable, cli_path, query]
+    print('executable', sys.executable)
     if with_coverage:
         args = ['coverage', 'run', '-a'] + args
-    p = subprocess.Popen(args, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    newenv = dict(os.environ)
+    newenv.update(env)
+    p = subprocess.Popen(args, env=newenv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
     return p, out, err
+
+
+def bstr(s):
+    if sys.version_info.major == 3:
+        return s.encode()
+    return s
 
 
 testdata = [
     # rank
     ({'BS_MATCH_MODE': 'rank', 'BS_MATCH_RATIO': '0.8', 'BS_MATCH_LIMIT': '1', 'BS_FMT': '{title}|{vocals}|{year}'},
      'eight days a wee', b'Eight Days a Week|Lennon, with McCartney|1964'),
+    # rank, special character
+    ({'BS_MATCH_MODE': 'rank', 'BS_MATCH_RATIO': '0.75', 'BS_MATCH_LIMIT': '1', 'BS_FMT': '{title}'},
+     'besame mucho', bstr('Bésame Mucho')),
     # rank, high ratio
     ({'BS_MATCH_MODE': 'rank', 'BS_MATCH_RATIO': '1', 'BS_MATCH_LIMIT': '1', 'BS_FMT': '{title}|{vocals}|{year}'},
      'eight days a wee', None),
@@ -49,5 +61,5 @@ def test_cli(env, query, want):
     if want is None:
         assert p.returncode != 0
     else:
+        assert p.returncode == 0, 'out={} err={}'.format(out, err)
         assert out == want
-        assert p.returncode == 0

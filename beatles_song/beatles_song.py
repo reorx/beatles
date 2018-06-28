@@ -6,7 +6,7 @@ import re
 import sys
 from difflib import SequenceMatcher
 
-__version__ = '0.2.0'
+__version__ = '0.3.0'
 
 DEBUG = False
 PURGE_QUERY = False
@@ -92,6 +92,8 @@ def limit_list(l, limit):
         return l[:limit]
     return l
 
+# seems py3 will fail on this function if LC_ALL is not UTF-8,
+# so running this script in subprocess must ensure all envs are inherited
 def format_output_line(s):
     return FMT.format(**s)
 

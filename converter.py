@@ -200,6 +200,8 @@ def limit_list(l, limit):
         return l[:limit]
     return l
 
+# seems py3 will fail on this function if LC_ALL is not UTF-8,
+# so running this script in subprocess must ensure all envs are inherited
 def format_output_line(s):
     return FMT.format(**s)
 
