@@ -37,6 +37,6 @@ Usage:
 
   - Original source: https://en.wikipedia.org/wiki/List_of_songs_recorded_by_the_Beatles
 
-  - Total items: 305 (`$('table.jquery-tablesorter').find('tr').length - 1`)
+  - Total items: 305 (`$('.jquery-tablesorter>tbody>tr').length`)
 
   - Converted by: http://wikitable2csv.ggor.de/
