@@ -26,6 +26,10 @@ Usage:
 
 ### Alfred Workflow
 
+![](images/alfred_beatles.png)
+
+Get it here: [Beatles Song.alfredworkflow](plugins/alfred/Beatles%20Song.alfredworkflow)
+
 ### Bitbar Plugin
 
 ![](images/bitbar_beatles.gif)
