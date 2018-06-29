@@ -138,7 +138,8 @@ if [ "$track" != "no track selected" ]; then
     artist_lower=$(echo "$artist" | tr '[:upper:]' '[:lower:]')
     if [[ "$artist_lower" == "the beatles" || "$artist_lower" == "beatles" ]]; then
         beatles_info=$(BS_PURGE_QUERY=1 \
-            BS_FMT="{title} - {vocals}, {year}" \
+            BS_FMT='{title} - {vocals}, {year}' \
+            BS_MODE='rank,fuzzy' \
             "$BTS_PATH" "$track" 2>&1)
         rc=$?
         #echo "got beatles, $beatles_info"
