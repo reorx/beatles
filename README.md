@@ -28,6 +28,20 @@ Usage:
 
 ### Bitbar Plugin
 
+![](images/bitbar_beatles.gif)
+
+Get it here: [itunes_beatles.10s.sh](plugins/bitbar/itunes_beatles.10s.sh)
+
+How-to:
+
+1. Download and put it under your BitBar plugins directory
+
+2. Install bts by `pip install bts`
+
+3. Make sure `bts` can be found under `/usr/local/bin` or `/usr/bin`,
+   or set the execution path directly in `itunes_beatles.10s.sh` file
+   (e.g. `BTS_PATH=/Users/me/.local/bin/bts`)
+
 ## Data
 
 - `data/songs.wikipedia.csv`
