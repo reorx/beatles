@@ -7,18 +7,18 @@ import re
 import sys
 from difflib import SequenceMatcher
 
-__version__ = '0.3.0'
+__version__ = '0.4.0'
 
 DEBUG = False
 PURGE_QUERY = False
-MATCH_MODE = 'rank'  # rank, fuzzy, or mixed
-MATCH_LIMIT = 1
-MATCH_RATIO = 0.75
+MODE = 'rank'  # rank, fuzzy, or mixed
+LIMIT = 1
+RATIO = 0.75
 FMT = '{title} - {vocals}, {year}'
 LIST_ALL = False
 SHOW_ENVS = False
 
-global_keys = ['DEBUG', 'PURGE_QUERY', 'MATCH_MODE', 'MATCH_LIMIT', 'MATCH_RATIO', 'FMT', 'LIST_ALL', 'SHOW_ENVS']
+global_keys = ['DEBUG', 'PURGE_QUERY', 'MODE', 'LIMIT', 'RATIO', 'FMT', 'LIST_ALL', 'SHOW_ENVS']
 
 re_brackets = re.compile(r'\([^()]+\)')
 
@@ -34,13 +34,13 @@ def match_songs(query, mode):
     results = []
     for m in mode.split(','):
         results.extend(call_match_by_mode(m, sig))
-    return limit_list(results, MATCH_LIMIT)
+    return limit_list(results, LIMIT)
 
 def call_match_by_mode(mode, sig):
     if mode == 'rank':
-        return rank_match(sig, MATCH_RATIO, MATCH_LIMIT)
+        return rank_match(sig, RATIO, LIMIT)
     elif mode == 'fuzzy':
-        return fuzzy_match(sig, MATCH_LIMIT)
+        return fuzzy_match(sig, LIMIT)
     else:
         raise ValueError('mode is not supported: ' + mode)
 
@@ -81,12 +81,17 @@ def fuzzy_match(sig, limit):
         if sig in k:
             c_in.append(s)
             continue
-    candidates = c_starts + c_in
+    candidates = sort_songs(c_starts) + sort_songs(c_in)
     if not candidates:
         debugp('fuzzy match no candidates')
         return candidates
     debugp('fuzzy match: total={} limit={}'.format(len(candidates), limit))
     return limit_list(candidates, limit)
+
+_key_lambda = lambda x: x['title']
+
+def sort_songs(l):
+    return sorted(l, key=_key_lambda)
 
 def limit_list(l, limit):
     if len(l) > limit:
@@ -110,10 +115,10 @@ def main():
     for i in global_keys:
         env_key = 'BS_' + i
         globals()[i] = os.environ.get(env_key, globals()[i])
-    global MATCH_LIMIT
-    global MATCH_RATIO
-    MATCH_LIMIT = int(MATCH_LIMIT)
-    MATCH_RATIO = float(MATCH_RATIO)
+    global LIMIT
+    global RATIO
+    LIMIT = int(LIMIT)
+    RATIO = float(RATIO)
 
     # show envs
     if SHOW_ENVS:
@@ -136,12 +141,12 @@ def main():
     if PURGE_QUERY:
         query = purge_query(query)
 
-    debugp('global vars: MATCH_MODE={} MATCH_RATIO={} MATCH_LIMIT={} FMT={}'.format(
-        MATCH_MODE, MATCH_RATIO, MATCH_LIMIT, FMT,
+    debugp('global vars: MODE={} RATIO={} LIMIT={} FMT={}'.format(
+        MODE, RATIO, LIMIT, FMT,
     ))
     # match songs
     try:
-        matched = match_songs(query, MATCH_MODE)
+        matched = match_songs(query, MODE)
     except ValueError as e:
         print(str(e))
         sys.exit(1)

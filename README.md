@@ -16,9 +16,9 @@ Usage:
 
 - `BS_FMT='{title} - {vocals} - {year}' bts yesterday`
 
-- `BS_MATCH_MODE=rank BS_MATCH_RATIO=0.8 BS_MATCH_LIMIT=1 bts 'the long and windy road'`
+- `BS_MODE=rank BS_RATIO=0.8 BS_LIMIT=1 bts 'the long and windy road'`
 
-- `BS_MATCH_MODE=fuzzy BS_MATCH_LIMIT=10 bts yes`
+- `BS_MODE=fuzzy BS_LIMIT=10 bts yes`
 
 - `BS_LIST_ALL=1 bts`
 
