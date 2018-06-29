@@ -12,7 +12,7 @@ def to_alfred_dict(sd):
     - subtitle
     - arg
     """
-    subtitle = '{} / {} / {}'.format(sd['vocals'], sd['album'], sd['year'])
+    subtitle = '{} / {} / {}'.format(sd['vocals'], sd['year'], sd['album'])
 
     return {
         'title': sd['title'],
