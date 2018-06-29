@@ -28,7 +28,7 @@ Usage:
 
 ### Bitbar Plugin
 
-## Data source
+## Data
 
 - `data/songs.wikipedia.csv`
 

@@ -7,7 +7,7 @@ import re
 import sys
 from difflib import SequenceMatcher
 
-__version__ = '0.4.0'
+__version__ = '0.5.0'
 
 DEBUG = False
 PURGE_QUERY = False
@@ -22,9 +22,11 @@ global_keys = ['DEBUG', 'PURGE_QUERY', 'MODE', 'LIMIT', 'RATIO', 'FMT', 'LIST_AL
 
 re_brackets = re.compile(r'\([^()]+\)')
 
+
 def debugp(s):
     if DEBUG:
         print('DEBUG: ' + s)
+
 
 def match_songs(query, mode):
     # keep only alpha
@@ -36,6 +38,7 @@ def match_songs(query, mode):
         results.extend(call_match_by_mode(m, sig))
     return limit_list(results, LIMIT)
 
+
 def call_match_by_mode(mode, sig):
     if mode == 'rank':
         return rank_match(sig, RATIO, LIMIT)
@@ -44,8 +47,10 @@ def call_match_by_mode(mode, sig):
     else:
         raise ValueError('mode is not supported: ' + mode)
 
+
 def precise_match(sig):
     return songs.get(sig)
+
 
 def rank_match(sig, min_ratio, limit):
     s = precise_match(sig)
@@ -71,6 +76,7 @@ def rank_match(sig, min_ratio, limit):
     debugp('rank match: total={} limit={}'.format(len(candidates), limit))
     return limit_list(candidates, limit)
 
+
 def fuzzy_match(sig, limit):
     c_starts = []
     c_in = []
@@ -88,20 +94,25 @@ def fuzzy_match(sig, limit):
     debugp('fuzzy match: total={} limit={}'.format(len(candidates), limit))
     return limit_list(candidates, limit)
 
-_key_lambda = lambda x: x['title']
+
+_key_lambda = lambda x: x['title']  # NOQA
+
 
 def sort_songs(l):
     return sorted(l, key=_key_lambda)
+
 
 def limit_list(l, limit):
     if len(l) > limit:
         return l[:limit]
     return l
 
+
 # seems py3 will fail on this function if LC_ALL is not UTF-8,
 # so running this script in subprocess must ensure all envs are inherited
 def format_output_line(s):
     return FMT.format(**s)
+
 
 def purge_query(s):
     # remove brackets like `(xxx)`
@@ -109,6 +120,7 @@ def purge_query(s):
     # strip
     s = s.strip()
     return s
+
 
 def main():
     # update global vars by env
@@ -136,7 +148,7 @@ def main():
     try:
         query = sys.argv[1]
     except IndexError:
-        print('Usage: beatles_searcher.py <query>')
+        print('Usage: beatles_song.py <query>')
         sys.exit(1)
     if PURGE_QUERY:
         query = purge_query(query)
@@ -155,6 +167,7 @@ def main():
         sys.exit(1)
     for s in matched:
         print(format_output_line(s))
+
 
 songs = {
 "baroriginal": {"album": "Anthology 2", "notes": "", "songwriters": "John Lennon\nPaul McCartney\nGeorge Harrison\nRingo Starr", "title": "12-Bar Original", "vocals": "Instrumental", "year": "1965"},
@@ -463,6 +476,7 @@ songs = {
 "youngblood": {"album": "Live at the BBC", "notes": "Cover", "songwriters": "Jerry Leiber and Mike Stoller", "title": "Young Blood", "vocals": "Harrison", "year": "1963"},
 "yourmothershouldknow": {"album": "Magical Mystery Tour", "notes": "", "songwriters": "McCartney", "title": "Your Mother Should Know", "vocals": "McCartney", "year": "1967"},
 }
+
 
 if __name__ == '__main__':
     main()

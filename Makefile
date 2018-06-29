@@ -1,4 +1,4 @@
-PY_CLI_VERSION ?= 0.4.0
+PY_CLI_VERSION ?= 0.5.0
 convert:
 	PY_CLI_VERSION=$(PY_CLI_VERSION) python3 converter.py
 
