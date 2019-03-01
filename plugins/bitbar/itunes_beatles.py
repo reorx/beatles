@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
 # <bitbar.title>iTunes Beatles</bitbar.title>
 # <bitbar.version>0.1.0</bitbar.version>
 # <bitbar.author>Reorx</bitbar.author>
@@ -23,6 +22,7 @@ The Beatles | color=#666666
 The Beatles | size=12 color=#999999 length=30
 ---
 """
+
 
 def main():
     pass
